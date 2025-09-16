@@ -3,7 +3,6 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [main]
-  workflow_dispatch:  # Manual trigger
 
 jobs:
   build-and-deploy:
@@ -14,28 +13,18 @@ jobs:
       IMAGE_BACKEND: amazilo/devops-expensy-backend
 
     steps:
-    # 1️⃣ Checkout code
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # 2️⃣ Azure Login
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    # 3️⃣ Set up Docker Buildx
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
-    # 4️⃣ Log in to Docker Hub
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    # 5️⃣ Build & push frontend
     - name: Build and push frontend
       uses: docker/build-push-action@v4
       with:
@@ -43,7 +32,6 @@ jobs:
         push: true
         tags: ${{ env.IMAGE_FRONTEND }}:latest
 
-    # 6️⃣ Build & push backend
     - name: Build and push backend
       uses: docker/build-push-action@v4
       with:
@@ -51,24 +39,17 @@ jobs:
         push: true
         tags: ${{ env.IMAGE_BACKEND }}:latest
 
-    # 7️⃣ Install kubectl
-    - name: Install kubectl
-      run: |
-        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-        chmod +x kubectl
-        sudo mv kubectl /usr/local/bin/
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
 
-    # 8️⃣ Get AKS credentials
-    - name: Get AKS credentials
-      run: |
-        az aks get-credentials \
-          --resource-group myAKSAmaziloRG \
-          --name myAKSAmaziloCluster \
-          --overwrite-existing
-
-    # 9️⃣ Deploy to AKS
     - name: Deploy to AKS
       run: |
-        kubectl apply -f infrastructure/k8s/frontend-deployment.yaml
-        kubectl apply -f infrastructure/k8s/backend-deployment.yaml
+        echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
+        export KUBECONFIG=kubeconfig.yaml
+        kubectl apply -f devops-expensy/frontend-deployment.yaml
+        kubectl apply -f devops-expensy/frontend-service.yaml
+        kubectl apply -f devops-expensy/backend-deployment.yaml
+        kubectl apply -f devops-expensy/backend-service.yaml
 
