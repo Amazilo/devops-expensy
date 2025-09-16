@@ -53,15 +53,12 @@ jobs:
         docker build -t $BACKEND_IMAGE:latest -f expensy_backend/Dockerfile.backend .
         docker push $BACKEND_IMAGE:latest
 
-    - name: Set up Azure CLI
-      uses: azure/setup-azure@v3
-
     - name: Login to Azure
-      run: |
-        az login --service-principal \
-          --username ${{ secrets.AZURE_CLIENT_ID }} \
-          --password ${{ secrets.AZURE_CLIENT_SECRET }} \
-          --tenant ${{ secrets.AZURE_TENANT_ID }}
+      uses: azure/login@v1
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: c371d301-3275-437a-b83d-fbd24b765127
 
     - name: Get AKS credentials
       run: |
@@ -72,3 +69,4 @@ jobs:
     - name: Deploy to AKS
       run: |
         kubectl apply -f infrastructure/k8s/
+
