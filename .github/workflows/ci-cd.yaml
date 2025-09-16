@@ -14,28 +14,23 @@ jobs:
       IMAGE_BACKEND: amazilo/devops-expensy-backend
 
     steps:
-    # 1. Checkout code
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # 2. Log in to Azure using Service Principal
     - name: Log in to Azure
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    # 3. Set up Docker Buildx
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
-    # 4. Log in to Docker Hub
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    # 5. Build and push frontend image
     - name: Build and push frontend
       uses: docker/build-push-action@v4
       with:
@@ -43,7 +38,6 @@ jobs:
         push: true
         tags: ${{ env.IMAGE_FRONTEND }}:latest
 
-    # 6. Build and push backend image
     - name: Build and push backend
       uses: docker/build-push-action@v4
       with:
@@ -51,18 +45,21 @@ jobs:
         push: true
         tags: ${{ env.IMAGE_BACKEND }}:latest
 
-    # 7. Install latest kubectl manually (no more broken action)
     - name: Install kubectl
       run: |
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/
 
-    # 8. Configure kubeconfig & deploy to AKS
+    - name: Get AKS credentials
+      run: |
+        az aks get-credentials \
+          --resource-group myAKSAmaziloRG \
+          --name myAKSAmaziloCluster \
+          --overwrite-existing
+
     - name: Deploy to AKS
       run: |
-        echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
-        export KUBECONFIG=kubeconfig.yaml
         kubectl apply -f infrastructure/k8s/frontend-deployment.yaml
         kubectl apply -f infrastructure/k8s/backend-deployment.yaml
 
