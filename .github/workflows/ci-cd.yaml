@@ -10,26 +10,32 @@ jobs:
 
     env:
       REGISTRY: docker.io
-      IMAGE_FRONTEND: amazilo/devops.expensy-frontend
-      IMAGE_BACKEND: amazilo/devops.expensy-backend
+      IMAGE_FRONTEND: amazilo/devops-expensy-frontend
+      IMAGE_BACKEND: amazilo/devops-expensy-backend
 
     steps:
-    # Step 1: Checkout the repository
+    # 1. Checkout code
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # Step 2: Set up Docker Buildx
+    # 2. Log in to Azure using Service Principal
+    - name: Log in to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    # 3. Set up Docker Buildx
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
-    # Step 3: Log in to Docker Hub
+    # 4. Log in to Docker Hub
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    # Step 4: Build and push frontend image
+    # 5. Build and push frontend image
     - name: Build and push frontend
       uses: docker/build-push-action@v4
       with:
@@ -37,7 +43,7 @@ jobs:
         push: true
         tags: ${{ env.IMAGE_FRONTEND }}:latest
 
-    # Step 5: Build and push backend image
+    # 6. Build and push backend image
     - name: Build and push backend
       uses: docker/build-push-action@v4
       with:
@@ -45,20 +51,14 @@ jobs:
         push: true
         tags: ${{ env.IMAGE_BACKEND }}:latest
 
-    # Step 6: Log in to Azure
-    - name: Log in to Azure
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    # Step 7: Install kubectl
+    # 7. Install latest kubectl manually (no more broken action)
     - name: Install kubectl
       run: |
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/
 
-    # Step 8: Deploy to AKS
+    # 8. Configure kubeconfig & deploy to AKS
     - name: Deploy to AKS
       run: |
         echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
