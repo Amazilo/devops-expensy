@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+
+  redis:
+    image: redis
+    command: redis-server --requirepass someredispassword
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ./expensy_backend
+      dockerfile: Dockerfile.backend
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./expensy_backend/.env
+    depends_on:
+      - mongo
+      - redis
+
+  frontend:
+    build:
+      context: ./expensy_frontend
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./expensy_frontend/.env
+    depends_on:
+      - backend
