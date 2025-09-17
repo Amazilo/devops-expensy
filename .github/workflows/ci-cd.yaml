@@ -28,12 +28,12 @@ jobs:
 
     - name: �� Build and push backend
       run: |
-        docker build -t $BACKEND_IMAGE ./expensy_backend
+        docker build -t $BACKEND_IMAGE ./devops-expensy/expensy_backend
         docker push $BACKEND_IMAGE
 
     - name: 🐳 Build and push frontend
       run: |
-        docker build -t $FRONTEND_IMAGE ./expensy_frontend
+        docker build -t $FRONTEND_IMAGE ./devops-expensy/expensy_frontend
         docker push $FRONTEND_IMAGE
 
     - name: ☁️ Azure login
