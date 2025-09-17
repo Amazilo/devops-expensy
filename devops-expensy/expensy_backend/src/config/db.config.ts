@@ -13,7 +13,8 @@ const mongoConnectionGauge = new client.Gauge({
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.DATABASE_URI!, {
+    await mongoose.connect(process.env.MONGO_URI || process.env.DATABASE_URI!, {
+
     });
     console.log('MongoDB connected');
     mongoConnectionGauge.set(1); // Set gauge to 1 on successful connection
