@@ -29,7 +29,6 @@ jobs:
       uses: docker/build-push-action@v4
       with:
         context: ./devops-expensy/expensy_frontend
-        file: ./devops-expensy/expensy_frontend/Dockerfile.frontend
         push: true
         tags: ${{ env.IMAGE_FRONTEND }}:latest
 
