@@ -5,7 +5,6 @@ on:
     branches: [main]
 
 env:
-  DOCKER_USER: amazilo
   BACKEND_IMAGE: amazilo/expensy-backend:latest
   FRONTEND_IMAGE: amazilo/expensy-frontend:latest
   RESOURCE_GROUP: myAKSAmaziloRG
@@ -26,7 +25,7 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: �� Build and push backend
+    - name: 🐳 Build and push backend
       run: |
         docker build -t $BACKEND_IMAGE ./devops-expensy/expensy_backend
         docker push $BACKEND_IMAGE
@@ -47,9 +46,13 @@ jobs:
 
     - name: 🚀 Deploy backend to AKS
       run: |
-        kubectl set image deployment/backend backend=$BACKEND_IMAGE -n $NAMESPACE
+        kubectl apply -f devops-expensy/backend-deployment.yaml -n $NAMESPACE
+        kubectl apply -f devops-expensy/backend-service.yaml -n $NAMESPACE
+        kubectl rollout status deployment/backend -n $NAMESPACE
 
     - name: 🚀 Deploy frontend to AKS
       run: |
-        kubectl set image deployment/frontend frontend=$FRONTEND_IMAGE -n $NAMESPACE
+        kubectl apply -f devops-expensy/frontend-deployment.yaml -n $NAMESPACE
+        kubectl apply -f devops-expensy/frontend-service.yaml -n $NAMESPACE
+        kubectl rollout status deployment/frontend -n $NAMESPACE
 
