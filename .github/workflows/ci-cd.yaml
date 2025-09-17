@@ -1,56 +1,55 @@
-name: CI/CD Pipeline
+name: Expensy CI/CD
 
 on:
   push:
     branches: [main]
 
+env:
+  DOCKER_USER: amazilo
+  BACKEND_IMAGE: amazilo/expensy-backend:latest
+  FRONTEND_IMAGE: amazilo/expensy-frontend:latest
+  RESOURCE_GROUP: myAKSAmaziloRG
+  CLUSTER_NAME: myAKSAmaziloCluster
+  NAMESPACE: default
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
-    env:
-      IMAGE_FRONTEND: amazilo/devops-expensy-frontend
-      IMAGE_BACKEND: amazilo/devops-expensy-backend
-
     steps:
-    - name: Checkout code
+    - name: ⬇️ Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Log in to Docker Hub
+    - name: 🔐 Log in to Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build and push frontend
-      uses: docker/build-push-action@v4
-      with:
-        context: ./devops-expensy/expensy_frontend
-        push: true
-        tags: ${{ env.IMAGE_FRONTEND }}:latest
-
-
-    - name: Build and push backend
-      uses: docker/build-push-action@v4
-      with:
-        context: ./devops-expensy/expensy_backend
-        push: true
-        tags: ${{ env.IMAGE_BACKEND }}:latest
-
-    - name: Set up kubectl
-      uses: azure/setup-kubectl@v3
-      with:
-        version: 'latest'
-
-    - name: Deploy to AKS
+    - name: �� Build and push backend
       run: |
-        echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
-        export KUBECONFIG=kubeconfig.yaml
-        kubectl apply -f devops-expensy/frontend-deployment.yaml
-        kubectl apply -f devops-expensy/frontend-service.yaml
-        kubectl apply -f devops-expensy/backend-deployment.yaml
-        kubectl apply -f devops-expensy/backend-service.yaml
+        docker build -t $BACKEND_IMAGE ./expensy_backend
+        docker push $BACKEND_IMAGE
+
+    - name: 🐳 Build and push frontend
+      run: |
+        docker build -t $FRONTEND_IMAGE ./expensy_frontend
+        docker push $FRONTEND_IMAGE
+
+    - name: ☁️ Azure login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: ☁️ Get AKS credentials
+      run: |
+        az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME
+
+    - name: 🚀 Deploy backend to AKS
+      run: |
+        kubectl set image deployment/backend backend=$BACKEND_IMAGE -n $NAMESPACE
+
+    - name: 🚀 Deploy frontend to AKS
+      run: |
+        kubectl set image deployment/frontend frontend=$FRONTEND_IMAGE -n $NAMESPACE
 
