@@ -46,13 +46,15 @@ jobs:
 
     - name: 🚀 Deploy backend to AKS
       run: |
-        kubectl apply -f devops-expensy/backend-deployment.yaml -n $NAMESPACE
-        kubectl apply -f devops-expensy/backend-service.yaml -n $NAMESPACE
+        echo Amazilo
+        ls
+        kubectl apply -f infrastructure/k8s/backend-deployment.yaml -n $NAMESPACE
+        kubectl apply -f infrastructure/k8s/backend-service.yaml -n $NAMESPACE
         kubectl rollout status deployment/backend -n $NAMESPACE
 
     - name: 🚀 Deploy frontend to AKS
       run: |
-        kubectl apply -f devops-expensy/frontend-deployment.yaml -n $NAMESPACE
-        kubectl apply -f devops-expensy/frontend-service.yaml -n $NAMESPACE
+        kubectl apply -f infrastructure/k8s/frontend-deployment.yaml -n $NAMESPACE
+        kubectl apply -f infrastructure/k8s/frontend-service.yaml -n $NAMESPACE
         kubectl rollout status deployment/frontend -n $NAMESPACE
 

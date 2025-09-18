@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: frontend
 spec:
-  replicas: 1
+  replicas: 2   # ✅ Two pods for high availability & zero downtime during rollout
   selector:
     matchLabels:
       app: frontend
@@ -16,7 +16,21 @@ spec:
       - name: frontend
         image: amazilo/expensy-frontend:latest
         ports:
-        - containerPort: 3000
-        env:
-        - name: NEXT_PUBLIC_API_URL
-          value: "http://backend-service:5000"
+        - containerPort: 3000   # adjust if your frontend runs on a different port
+        readinessProbe:
+          httpGet:
+            path: /             # ✅ Root path should return 200 OK if app is healthy
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 6
+
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3

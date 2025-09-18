@@ -1,12 +1,50 @@
-apiVersion: v1
-kind: Service
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: backend-service
+  name: backend
 spec:
+  replicas: 2   # ✅ Two pods for high availability & zero downtime during rollouts
   selector:
-    app: backend
-  ports:
-    - protocol: TCP
-      port: 5000         # Port frontend will use to connect
-      targetPort: 8706   # Actual container port
-  type: ClusterIP
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: amazilo/expensy-backend:latest
+        ports:
+        - containerPort: 8706
+        env:
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: MONGO_URI
+        - name: REDIS_HOST
+          value: redis
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: REDIS_PASSWORD
+
+        readinessProbe:
+          httpGet:
+            path: /api/ping    # ✅ Replace with your actual health endpoint if different
+            port: 8706
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 6
+
+        livenessProbe:
+          httpGet:
+            path: /api/ping    # ✅ Same endpoint can be used to check if app is alive
+            port: 8706
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
